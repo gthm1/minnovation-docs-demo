@@ -25,14 +25,14 @@ const config = {
   },
 
   // Placeholder — replace with the real GitHub Pages URL once a repo exists.
-  url: 'https://minnovation-technologies.github.io',
+  url: 'https://gthm1.github.io',
   // GitHub Pages serves this under a subpath; Cloudflare Workers and Netlify
   // serve it at the root of their own subdomain. Set DOCS_BASE_URL=/ in that
   // platform's build environment variables to override this default there.
   baseUrl: process.env.DOCS_BASE_URL || '/minnovation-docs-demo/',
 
   // GitHub pages deployment config — replace with the real org/repo.
-  organizationName: 'minnovation-technologies',
+  organizationName: 'gthm1',
   projectName: 'minnovation-docs-demo',
 
   onBrokenLinks: 'throw',
@@ -52,7 +52,7 @@ const config = {
           routeBasePath: 'docs',
           sidebarPath: './sidebars.js',
           editUrl:
-            'https://github.com/minnovation-technologies/minnovation-docs-demo/tree/main/',
+            'https://github.com/gthm1/minnovation-docs-demo/tree/main/',
         },
         blog: false,
         theme: {
@@ -120,7 +120,7 @@ const config = {
             position: 'right',
           },
           {
-            href: 'https://github.com/minnovation-technologies/minnovation-docs-demo',
+            href: 'https://github.com/gthm1/minnovation-docs-demo',
             label: 'GitHub',
             position: 'right',
           },
@@ -139,7 +139,7 @@ const config = {
               {label: 'Edit in CMS', href: 'pathname:///admin/'},
               {
                 label: 'GitHub repo',
-                href: 'https://github.com/minnovation-technologies/minnovation-docs-demo',
+                href: 'https://github.com/gthm1/minnovation-docs-demo',
               },
             ],
           },
