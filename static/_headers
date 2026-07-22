@@ -1,0 +1,9 @@
+# Netlify-only: enforces a login prompt on /internal-docs/* when this repo is
+# deployed to Netlify. Has no effect on GitHub Pages or Cloudflare Pages.
+#
+# DEMO CREDENTIALS ONLY — change these, and note that because this repo is
+# public, anyone can read this password directly from the source. For a real
+# deployment, generate this file at build time from a Netlify environment
+# variable instead of committing credentials — see SETUP_PERSONAL_ACCOUNT.md.
+/internal-docs/*
+  Basic-Auth: demo:letmein

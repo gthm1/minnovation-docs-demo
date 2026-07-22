@@ -6,8 +6,9 @@ This walks through getting all four demo pieces live under your own accounts:
 2. **Private site** — the same content, but with a real login wall on `/internal-docs/`, via Cloudflare Pages + Cloudflare Access (free)
 3. **Hierarchy** — visible in both, since it's the same nav/sidebar structure
 4. **Adding content through the CMS** — Decap CMS, running locally against your repo
+5. *(Optional)* **Netlify** as a second hosting platform, with a free path-scoped login gate on `/internal-docs/` — see step 3c for why real SSO specifically needs an Enterprise plan there
 
-Total cost: **$0**. You only need a GitHub account (you have one) and a free Cloudflare account (no credit card required).
+Total cost: **$0**. You only need a GitHub account (you have one) and a free Cloudflare account (no credit card required). Netlify is optional and also free at this scope.
 
 ---
 
@@ -104,6 +105,61 @@ Now:
 That's the live "public vs. private" contrast for the demo — same repo, same
 build, two different hosting setups, one of them actually gated by path.
 
+## 3c. Optional: also deploy to Netlify
+
+One honest caveat first: **true SSO (SAML) on Netlify is an Enterprise-plan
+feature** — it requires Organization/Team SSO to already be configured, which
+isn't available on a free or personal-Pro account. So a personal demo can't use
+real SSO on Netlify today. Here's what you get instead, from cheapest to closest
+to "actual SSO":
+
+| Option | Plan | What it looks like |
+|---|---|---|
+| Basic Auth via `_headers`, scoped to `/internal-docs/*` | **Free** | Browser's built-in username/password prompt, only on that path |
+| Password Protection (shared password) | Pro (~$19/mo) | One shared password, but for the **whole site**, not just `/internal-docs/` |
+| Team login / SSO protection | **Enterprise only** | Real login via Netlify team account or your company's SAML IdP, again whole-site |
+
+**For a free personal demo, use the first option** — it's already set up in the
+repo. There's a `static/_headers` file with:
+
+```
+/internal-docs/*
+  Basic-Auth: demo:letmein
+```
+
+Docusaurus copies everything in `static/` straight into the build output, so this
+ships automatically. Change the demo credentials before you deploy (and note that
+since this repo is public, anyone can read whatever password you put here
+straight from the source — fine for a demo, not for anything real).
+
+To deploy:
+
+1. Sign up free at **app.netlify.com** (or log in with GitHub).
+2. **Add new site → Import an existing project → Deploy with GitHub**, authorize
+   Netlify, and pick the `minnovation-docs-demo` repo.
+3. Build settings:
+   - Build command: `npm run build`
+   - Publish directory: `build`
+4. Click **Deploy**. You'll get a URL like `https://<random-name>.netlify.app`.
+
+Now:
+- `https://<your-site>.netlify.app/docs/` — opens with no prompt
+- `https://<your-site>.netlify.app/internal-docs/` — browser shows a
+  username/password prompt (`demo` / `letmein` unless you changed it) before
+  showing content
+
+This is a real, working, path-scoped access gate, on the free tier — just not
+SSO. It's a good second data point next to the Cloudflare Access setup: same
+repo, same idea, different platform, different plan required to do it "for real."
+
+**If this ever moves to a company Netlify account with Enterprise:** the path to
+actual SSO is Project configuration → General → Visitor access → Password
+Protection → set protection type to require SSO (after your org's SAML SSO is
+configured under team settings). Because that protects the whole site rather than
+just a path, the clean way to keep `/docs/` open in that setup is to deploy the
+repo as **two separate Netlify sites** — one left public, one with SSO protection
+turned on — the same pattern used for GitHub Pages + Cloudflare Pages above.
+
 ## 4. Demo the hierarchy
 
 Both deployments show the same navbar (**Public Docs** / **Internal Docs**) and the
@@ -162,7 +218,10 @@ concept — the local version already shows the full editing experience.
 2. Open the Cloudflare Pages URL — show `/docs/` opens fine, then click into
    `/internal-docs/` and hit the login wall. Log in with your email to show it
    through once authenticated.
-3. Point out the identical nav/sidebar structure on both — same hierarchy, two
-   different access postures.
-4. Switch to your terminal, run `npm run demo`, open `/admin/`, edit a page live,
+3. (If you set it up) Open the Netlify URL and click into `/internal-docs/` to
+   show the Basic Auth prompt — a second, simpler example of the same idea, and a
+   natural segue into the SSO-is-Enterprise-only caveat.
+4. Point out the identical nav/sidebar structure across all of them — same
+   hierarchy, different access postures depending on platform and plan.
+5. Switch to your terminal, run `npm run demo`, open `/admin/`, edit a page live,
    show the file change, push it, and refresh a live URL to show it propagate.
