@@ -1,14 +1,26 @@
 # Setting This Up As a Personal Demo
 
-This walks through getting all four demo pieces live under your own accounts:
+The demo now works like this:
 
-1. **Public site** — GitHub Pages (free)
-2. **Private site** — the same content, but with a real login wall on `/internal-docs/`, via Cloudflare Workers + Cloudflare Access (free)
-3. **Hierarchy** — visible in both, since it's the same nav/sidebar structure
-4. **Adding content through the CMS** — Decap CMS, running locally against your repo
-5. *(Optional)* **Netlify** as a second hosting platform, with a free path-scoped login gate on `/internal-docs/` — see step 3c for why real SSO specifically needs an Enterprise plan there
+- **One tagged content source** (`content/docs/`) — every page has a
+  `visibility: public` or `visibility: internal` field
+- **Two Netlify sites**, built from the same GitHub repo, each running a
+  build-time filter script that includes only the pages allowed for that site:
+  - **Public site** — only `visibility: public` pages
+  - **Internal site** — every page (public + internal), and requires a login
+- **Same hierarchy on both** — the public site's sidebar is just a filtered
+  subset of the internal site's, not a separately maintained structure
+- **Decap CMS** — editing a page includes a Visibility dropdown, so tagging
+  happens right where content gets written
+- **Built-in search** on both sites, which can only ever surface pages that
+  are actually in that build (so public search can't leak internal pages)
 
-Total cost: **$0**. You only need a GitHub account (you have one) and a free Cloudflare account (no credit card required). Netlify is optional and also free at this scope.
+GitHub Pages and Cloudflare Workers, from the earlier version of this demo,
+still work — they now build the **unfiltered internal superset** by default
+(nothing is gated), left running as a "here's what zero access control looks
+like" reference point. The two-Netlify-site setup below is the real demo.
+
+Total cost: **$0**.
 
 ---
 
@@ -21,35 +33,29 @@ cd minnovation-docs-demo
 git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/minnovation-docs-demo.git
 ```
 
-Create the repo first at **github.com/new** — name it `minnovation-docs-demo`, keep it
-**Public** (GitHub Pages on a free personal account only serves from public repos —
-note that means the published site itself is public web either way), and don't
-initialize it with a README (this project already has one).
+Create the repo first at **github.com/new** — name it `minnovation-docs-demo`,
+keep it **Public**, and don't initialize it with a README (this project
+already has one).
 
-Then update the placeholder org/repo name in the config to match your account.
+Update the placeholder org/repo name in the config to match your account.
 
 **On Windows (PowerShell):**
-
 ```powershell
 (Get-Content docusaurus.config.js) -replace 'minnovation-technologies', '<YOUR_GITHUB_USERNAME>' | Set-Content docusaurus.config.js
 ```
 
 **On macOS:**
-
 ```bash
 sed -i '' -e "s/minnovation-technologies/<YOUR_GITHUB_USERNAME>/g" docusaurus.config.js
 ```
 
 **On Linux:**
-
 ```bash
 sed -i -e "s/minnovation-technologies/<YOUR_GITHUB_USERNAME>/g" docusaurus.config.js
 ```
 
-Or simplest on any OS: open `docusaurus.config.js` in an editor and use
-find-and-replace to swap every occurrence of `minnovation-technologies` (there
-are six — in the `url`, `organizationName`, two `editUrl` fields, and two GitHub
-navbar/footer links) with your GitHub username.
+Or open `docusaurus.config.js` in an editor and find-and-replace every
+occurrence of `minnovation-technologies` with your GitHub username by hand.
 
 Commit and push:
 
@@ -60,208 +66,147 @@ git branch -M main
 git push -u origin main
 ```
 
-## 2. Turn on the public site (GitHub Pages)
+## 2. (Optional/reference) Turn on GitHub Pages
 
-The repo already includes `.github/workflows/deploy.yml`, which builds and deploys
-automatically on every push to `main`. You just need to point Pages at it:
+Shows the unfiltered internal superset — no login, everything visible. Useful
+as a "here's what happens with no access control" comparison point, not the
+main demo.
 
-1. On GitHub, go to your repo → **Settings → Pages**.
-2. Under **Build and deployment → Source**, choose **GitHub Actions**.
-3. Go to the **Actions** tab — you should see the workflow running from your last
-   push. Wait for it to go green (~1–2 minutes).
-4. Your public site is now live at:
-   `https://<YOUR_GITHUB_USERNAME>.github.io/minnovation-docs-demo/`
+1. Repo → **Settings → Pages → Build and deployment → Source** → **GitHub Actions**
+2. **Actions** tab → wait for the included workflow to go green
+3. Live at `https://<YOUR_GITHUB_USERNAME>.github.io/minnovation-docs-demo/`
 
-This is the "public site" — anyone with the link can see both `/docs/` and
-`/internal-docs/`, which is exactly the caveat from the walkthrough guide: GitHub
-Pages has no built-in access control, so nothing here is actually gated yet.
+## 3. (Optional/reference) Turn on Cloudflare Workers
 
-## 3. Turn on the private site (Cloudflare Workers + Access)
+Same unfiltered superset, on a second platform. Also optional now that the
+Netlify setup below does the actual public/private split properly.
 
-Cloudflare has folded Pages into its unified Workers product, so the dashboard
-flow looks a little different than older guides describe — you'll deploy this as
-a Worker with static assets rather than a "Pages project," but the result is the
-same: a second copy of the site, then a real login wall in front of just
-`/internal-docs/*`.
+1. **dash.cloudflare.com** → **Compute (Workers) → Workers & Pages → Create application**
+2. **Connect GitHub**, pick `minnovation-docs-demo`
+3. Build command `npm run build`, deploy command default `npx wrangler deploy`
+   (the repo's `wrangler.jsonc` handles the rest)
+4. After first deploy, go to **Settings → Variables and Secrets** and add
+   `DOCS_BASE_URL` = `/` (GitHub Pages needs a subpath baseUrl; Cloudflare
+   needs root), then retry the deploy
 
-### 3a. Deploy to Cloudflare Workers
+## 4. The real demo: two Netlify sites
 
-1. Sign up free at **dash.cloudflare.com**.
-2. In the left sidebar, go to **Compute (Workers) → Workers & Pages**, then click
-   **Create application** top right.
-3. On the "Create a Worker" screen, click **Connect GitHub**.
-4. Authorize Cloudflare's GitHub App and select the `minnovation-docs-demo` repo.
-5. Cloudflare should auto-detect Docusaurus and pre-fill sensible settings. If it
-   asks you to confirm or fill them in manually:
-   - **Build command:** `npm run build`
-   - **Deploy command:** leave the default, `npx wrangler deploy`
-   
-   This repo already includes a `wrangler.jsonc` telling that deploy command to
-   serve the `build/` folder as static assets, so you shouldn't need to configure
-   anything else there.
-6. **Important:** before or right after the first deploy, go to your Worker's
-   **Settings → Variables and Secrets** and add a build variable:
-   - **Name:** `DOCS_BASE_URL`
-   - **Value:** `/`
-   
-   GitHub Pages serves this site under a subpath
-   (`your-username.github.io/minnovation-docs-demo/`), so `docusaurus.config.js`
-   defaults `baseUrl` to `/minnovation-docs-demo/`. Cloudflare Workers serves it
-   at the root of its own subdomain instead, so it needs `baseUrl` to be `/` —
-   this variable overrides the default just for this deployment. Without it,
-   you'll see a "Your Docusaurus site did not load properly" error page.
-7. Trigger a new deploy after adding the variable (Deployments → Retry deploy, or
-   just push a new commit) so it picks up the change.
-8. Click **Save and Deploy** if you haven't already. First deploy takes a couple
-   of minutes.
-9. Note the resulting URL — something like
-   `https://minnovation-docs-demo.<your-subdomain>.workers.dev`.
+This is the actual public-vs-private, tagged-content demo.
 
-This alone is just a second copy of the same public site. The next step is what
-makes it "private."
+### 4a. Deploy the public site
 
-### 3b. Gate `/internal-docs/*` with Cloudflare Access
+1. Sign up free at **app.netlify.com** (or log in with GitHub)
+2. **Add new site → Import an existing project → Deploy with GitHub**, pick
+   `minnovation-docs-demo`
+3. Build settings: build command `npm run build`, publish directory `build`
+4. Before the first deploy (or right after, then redeploy), go to
+   **Site configuration → Environment variables** and add:
+   - `SITE_AUDIENCE` = `public`
+   - `DOCS_BASE_URL` = `/`
+5. Deploy. Rename the site something recognizable — **Site configuration →
+   General → Site details → Change site name** — e.g. `minnovation-docs-public`
+6. Visit `https://minnovation-docs-public.netlify.app/docs/` — only the
+   AlphaX/Conduit/XVision pages appear. No Architecture or Deployment section
+   in the sidebar, because there's nothing public in it to show.
 
-1. Still in the Cloudflare dashboard, go to **Zero Trust** (left sidebar). First
-   time here, it'll ask you to pick the **Free** plan (up to 50 users, no card
-   needed) and choose a team name.
-2. Go to **Access → Applications → Add an application → Self-hosted**.
-3. Configure:
-   - **Application domain:** your `.workers.dev` domain from step 3a
-   - **Path:** `internal-docs/*`
-   - (Leave the root path unset — Access only intercepts requests matching this
-     specific path, so `/docs/` and the homepage stay open)
-4. Add a policy: name it "Allow me," action **Allow**, rule: **Emails** →
-   your own email address.
-5. Save. That's it.
+### 4b. Deploy the internal site
 
-Now:
-- `https://<your-project>.<subdomain>.workers.dev/docs/` — opens with no login,
-  same as GitHub Pages
-- `https://<your-project>.<subdomain>.workers.dev/internal-docs/` — shows a
-  Cloudflare login screen first (one-time PIN emailed to you); only after logging
-  in as an allowed user do you see the content
+Repeat, connecting the **same repo** as a **second, separate** Netlify site:
 
-That's the live "public vs. private" contrast for the demo — same repo, same
-build, two different hosting setups, one of them actually gated by path.
+1. **Add new site → Import an existing project → Deploy with GitHub** again,
+   same repo
+2. Same build settings (`npm run build`, publish directory `build`)
+3. Environment variables this time:
+   - `SITE_AUDIENCE` = `internal`
+   - `DOCS_BASE_URL` = `/`
+4. Deploy, rename it e.g. `minnovation-docs-internal`
 
-## 3c. Optional: also deploy to Netlify
+Because `SITE_AUDIENCE=internal`, the build script also writes a `_headers`
+file that Basic-Auth-protects the **entire site** (not just one path — since
+it's now a fully separate deployment, whole-site protection is exactly what
+you want, and it's free). Demo credentials are `demo` / `letmein`, set in
+`scripts/prepare-build.mjs` — change them before showing this to anyone, and
+remember the repo is public so anyone can read whatever you put there from
+source.
 
-One honest caveat first: **true SSO (SAML) on Netlify is an Enterprise-plan
-feature** — it requires Organization/Team SSO to already be configured, which
-isn't available on a free or personal-Pro account. So a personal demo can't use
-real SSO on Netlify today. Here's what you get instead, from cheapest to closest
-to "actual SSO":
+Visit `https://minnovation-docs-internal.netlify.app/docs/` — you'll get a
+browser username/password prompt first. After logging in: all six pages,
+including Architecture and Deployment, with the same sidebar structure as the
+public site plus the extra two entries.
 
-| Option | Plan | What it looks like |
-|---|---|---|
-| Basic Auth via `_headers`, scoped to `/internal-docs/*` | **Free** | Browser's built-in username/password prompt, only on that path |
-| Password Protection (shared password) | Pro (~$19/mo) | One shared password, but for the **whole site**, not just `/internal-docs/` |
-| Team login / SSO protection | **Enterprise only** | Real login via Netlify team account or your company's SAML IdP, again whole-site |
+**One honest caveat, unchanged from before:** this is Basic Auth, not SSO.
+Real SAML SSO on Netlify is an **Enterprise-plan feature**, requiring
+Organization/Team SSO to already be configured — not available on a personal
+account. If this ever moves to a company Netlify Enterprise account, the
+`_headers` Basic Auth step gets replaced by Project configuration → Visitor
+access → Password Protection → SSO, applied to the internal site specifically
+(keeping the public site as its own separate, unprotected deployment, same
+two-site pattern used here).
 
-**For a free personal demo, use the first option** — it's already set up in the
-repo. There's a `static/_headers` file with:
+## 5. Demo the hierarchy
 
-```
-/internal-docs/*
-  Basic-Auth: demo:letmein
-```
+Open `/docs/` on both sites side by side. Same sidebar categories, same page
+titles, same ordering — the public one is just missing the two
+internal-only entries. That's the "one source, filtered differently" story in
+one screenshot.
 
-Docusaurus copies everything in `static/` straight into the build output, so this
-ships automatically. Change the demo credentials before you deploy (and note that
-since this repo is public, anyone can read whatever password you put here
-straight from the source — fine for a demo, not for anything real).
+## 6. Demo tagging content through the CMS
 
-To deploy:
-
-1. Sign up free at **app.netlify.com** (or log in with GitHub).
-2. **Add new site → Import an existing project → Deploy with GitHub**, authorize
-   Netlify, and pick the `minnovation-docs-demo` repo.
-3. Build settings:
-   - Build command: `npm run build`
-   - Publish directory: `build`
-4. Click **Deploy**. You'll get a URL like `https://<random-name>.netlify.app`.
-
-Now:
-- `https://<your-site>.netlify.app/docs/` — opens with no prompt
-- `https://<your-site>.netlify.app/internal-docs/` — browser shows a
-  username/password prompt (`demo` / `letmein` unless you changed it) before
-  showing content
-
-This is a real, working, path-scoped access gate, on the free tier — just not
-SSO. It's a good second data point next to the Cloudflare Access setup: same
-repo, same idea, different platform, different plan required to do it "for real."
-
-**If this ever moves to a company Netlify account with Enterprise:** the path to
-actual SSO is Project configuration → General → Visitor access → Password
-Protection → set protection type to require SSO (after your org's SAML SSO is
-configured under team settings). Because that protects the whole site rather than
-just a path, the clean way to keep `/docs/` open in that setup is to deploy the
-repo as **two separate Netlify sites** — one left public, one with SSO protection
-turned on — the same pattern used for GitHub Pages + Cloudflare Workers above.
-
-## 4. Demo the hierarchy
-
-Both deployments show the same navbar (**Public Docs** / **Internal Docs**) and the
-same sidebars within each. Walking between `/docs/getting-started/...` and
-`/internal-docs/architecture/...` on either deployment shows the structure —
-this part doesn't need any extra setup, it's just the site as built.
-
-## 5. Demo adding content through the CMS
-
-Run this locally against your own clone of the repo:
+Run locally against your own clone:
 
 ```bash
 npm install
 npm run demo
 ```
 
-This starts Docusaurus (`localhost:3000`) and the Decap CMS local proxy
-(`localhost:8081`) together. Then:
+This starts Docusaurus (`localhost:3000`, showing the internal/superset view
+by default) and the Decap CMS local proxy together. Then:
 
 1. Open `http://localhost:3000/minnovation-docs-demo/admin/`
-2. Pick a page (e.g. **Public Docs → AlphaX Cloud Overview**), edit some text,
-   hit **Save** (or **Publish**, depending on the CMS UI wording).
-3. Show the underlying file changed on disk, e.g.:
+2. Open **Docs**, pick any page — note the **Visibility** dropdown (Public /
+   Internal only)
+3. Create a **new page**: click **New Docs**, fill in a title and body, set
+   Visibility to whichever you want to demo, save
+4. Show the resulting file on disk, e.g.:
    ```bash
-   cat docs/getting-started/alphax-overview.md
+   cat content/docs/<wherever-you-put-it>.md
    ```
-4. To make the edit actually show up on the live sites, commit and push it:
+   Note the `visibility:` field in the frontmatter — that's the entire tagging
+   mechanism.
+5. Commit and push:
    ```bash
    git add -A
-   git commit -m "Edit via CMS"
+   git commit -m "Add a page via the CMS"
    git push
    ```
-   Both GitHub Pages and Cloudflare Workers will pick up the push automatically and
-   redeploy within a minute or two — refresh either live URL afterward to show the
-   change went live.
+   Both Netlify sites rebuild automatically. If you tagged the new page
+   Public, it'll show up on both. If Internal only, only the internal site
+   will have it — refresh both live URLs after the rebuilds finish (~1–2 min)
+   to show the difference live.
 
-This local-proxy setup needs zero extra accounts, which is what makes it fast to
-demo. The tradeoff: it only works when you're running it on your own machine, not
-for someone editing directly from the live site.
+## 7. Demo search
 
-### Optional stretch goal: editing straight from the live site
-
-If you want the CMS to work from the deployed site itself (not just locally), the
-Decap CMS backend needs to switch from the local proxy to a real GitHub connection —
-that means creating a small GitHub OAuth App (**Settings → Developer settings →
-OAuth Apps**) and a lightweight OAuth proxy (a few lines, deployable as a free
-Cloudflare Worker). This is a reasonable next step but not needed to demo the
-concept — the local version already shows the full editing experience.
+Type into the search box (top right of either site) for a term that only
+exists on an internal-only page (e.g. "runbook" or "escalation"). On the
+public site, it returns nothing — not because search is filtered afterward,
+but because that page was never part of the public build's search index in
+the first place.
 
 ---
 
 ## Quick demo script
 
-1. Open the GitHub Pages URL — show `/docs/` and `/internal-docs/`, point out both
-   are visible with no login (the "everything is public by default" caveat).
-2. Open the Cloudflare Workers URL — show `/docs/` opens fine, then click into
-   `/internal-docs/` and hit the login wall. Log in with your email to show it
-   through once authenticated.
-3. (If you set it up) Open the Netlify URL and click into `/internal-docs/` to
-   show the Basic Auth prompt — a second, simpler example of the same idea, and a
-   natural segue into the SSO-is-Enterprise-only caveat.
-4. Point out the identical nav/sidebar structure across all of them — same
-   hierarchy, different access postures depending on platform and plan.
-5. Switch to your terminal, run `npm run demo`, open `/admin/`, edit a page live,
-   show the file change, push it, and refresh a live URL to show it propagate.
+1. Open the public Netlify URL — browse `/docs/`, point out the sidebar:
+   Getting Started, API Reference, Installation. No Architecture, no
+   Deployment.
+2. Open the internal Netlify URL — hit the Basic Auth prompt, log in, and show
+   the same sidebar now includes Architecture and Deployment too.
+3. Point out identical structure/ordering on the shared entries — one source,
+   two filtered views.
+4. Search for something internal-only on both — works on internal, empty on
+   public.
+5. Switch to your terminal: `npm run demo`, open `/admin/`, create or edit a
+   page, set its Visibility, save, show the frontmatter field on disk, push,
+   and refresh both live sites once they rebuild.
+6. (Optional) Mention the GitHub Pages / Cloudflare copies as the "here's what
+   zero access control looks like" baseline, if useful context for the room.

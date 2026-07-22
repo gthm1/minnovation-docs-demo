@@ -3,13 +3,14 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
-    title: 'Two structurally separate spaces',
-    icon: '\u{1F5C2}\u{FE0F}',
+    title: 'One tagged source, two sites',
+    icon: '\u{1F3F7}\u{FE0F}',
     description: (
       <>
-        Public Docs and Internal Docs are separate content instances with their
-        own sidebars and URL paths (<code>/docs/</code> vs{' '}
-        <code>/internal-docs/</code>) — not one space with a permission toggle.
+        Every page carries a <code>visibility: public</code> or{' '}
+        <code>visibility: internal</code> tag. A build-time script filters the
+        same content folder differently for each deployment — no separate
+        content to keep in sync.
       </>
     ),
   },
@@ -19,18 +20,19 @@ const FeatureList = [
     description: (
       <>
         A git-based CMS (Decap CMS) at <code>/admin/</code> gives writers a
-        form-based editor. Saving a page there commits Markdown to GitHub
-        automatically.
+        form-based editor, including a Visibility toggle right on each page —
+        no separate step to decide where content ends up.
       </>
     ),
   },
   {
-    title: 'Free hosting, versioned in git',
-    icon: '\u{1F680}',
+    title: 'Built-in search',
+    icon: '\u{1F50D}',
     description: (
       <>
-        The whole site builds from a GitHub repo and deploys free via GitHub
-        Pages on every push — full page history comes for free through git.
+        Search indexes whatever pages made it into this particular build — so
+        the public site's search can never surface an internal-only page,
+        by construction.
       </>
     ),
   },

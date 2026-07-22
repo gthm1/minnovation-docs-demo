@@ -1,8 +1,9 @@
 ---
 sidebar_position: 1
+visibility: internal
 ---
 
-# System Architecture (Internal)
+# System Architecture
 
 High-level notes on how AlphaX Cloud, Conduit, and XVision fit together — the kind of
 content that should stay internal.
@@ -15,5 +16,7 @@ Includes internal service names, environment details, and links to infrastructur
 dashboards that clients should never see.
 
 :::note
-Placeholder content for demo purposes.
+Placeholder content for demo purposes. On the public site, this page — and the whole
+**Architecture** category — simply won't appear, since it has no public pages left
+once this one is filtered out.
 :::

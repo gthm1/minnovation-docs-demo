@@ -19,56 +19,29 @@ media_folder: "static/img/uploads"
 public_folder: "/img/uploads"
 
 collections:
-  - name: "public_docs"
-    label: "Public Docs"
-    description: "Client-facing documentation, visible to anyone."
-    files:
-      - name: "home"
-        label: "Public Docs — Home Page"
-        file: "docs/intro.mdx"
-        fields:
-          - {label: "Sidebar Position", name: "sidebar_position", widget: "number", required: false}
-          - {label: "Slug", name: "slug", widget: "string", required: false}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - name: "alphax_overview"
-        label: "AlphaX Cloud Overview"
-        file: "docs/getting-started/alphax-overview.md"
-        fields:
-          - {label: "Sidebar Position", name: "sidebar_position", widget: "number", required: false}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - name: "conduit_api"
-        label: "Conduit API Reference"
-        file: "docs/api-reference/conduit-api.md"
-        fields:
-          - {label: "Sidebar Position", name: "sidebar_position", widget: "number", required: false}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - name: "xvision_install"
-        label: "XVision Installation Guide"
-        file: "docs/installation/xvision-install.md"
-        fields:
-          - {label: "Sidebar Position", name: "sidebar_position", widget: "number", required: false}
-          - {label: "Body", name: "body", widget: "markdown"}
-
-  - name: "internal_docs"
-    label: "Internal Docs"
-    description: "Internal-only documentation. NOT actually access-restricted in this demo — see the walkthrough guide."
-    files:
-      - name: "home"
-        label: "Internal Docs — Home Page"
-        file: "internal-docs/intro.md"
-        fields:
-          - {label: "Sidebar Position", name: "sidebar_position", widget: "number", required: false}
-          - {label: "Slug", name: "slug", widget: "string", required: false}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - name: "system_architecture"
-        label: "System Architecture"
-        file: "internal-docs/architecture/system-architecture.md"
-        fields:
-          - {label: "Sidebar Position", name: "sidebar_position", widget: "number", required: false}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - name: "deployment_runbook"
-        label: "Deployment Runbook"
-        file: "internal-docs/deployment/deployment-runbook.md"
-        fields:
-          - {label: "Sidebar Position", name: "sidebar_position", widget: "number", required: false}
-          - {label: "Body", name: "body", widget: "markdown"}
+  - name: "docs"
+    label: "Docs"
+    description: >
+      All documentation lives here — the Visibility field on each page decides
+      whether it ships on the public site, the internal site, or both.
+      (Internal automatically includes everything Public includes.)
+    folder: "content/docs"
+    create: true
+    slug: "{{slug}}"
+    extension: "md"
+    nested:
+      depth: 100
+      summary: "{{title}}"
+    fields:
+      - {label: "Title", name: "title", widget: "string", required: false}
+      - label: "Visibility"
+        name: "visibility"
+        widget: "select"
+        options:
+          - {label: "Public", value: "public"}
+          - {label: "Internal only", value: "internal"}
+        default: "public"
+        hint: "Public pages show on both sites. Internal pages only show on the internal site."
+      - {label: "Sidebar Position", name: "sidebar_position", widget: "number", required: false}
+      - {label: "Slug (advanced — leave blank unless you know why)", name: "slug", widget: "string", required: false}
+      - {label: "Body", name: "body", widget: "markdown"}

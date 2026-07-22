@@ -1,8 +1,9 @@
 ---
 sidebar_position: 1
+visibility: internal
 ---
 
-# Deployment Runbook (Internal)
+# Deployment Runbook
 
 Steps the engineering team follows to deploy a new AlphaX Cloud release, including
 rollback steps and on-call escalation contacts.
@@ -15,5 +16,5 @@ rollback steps and on-call escalation contacts.
 :::note
 Placeholder content for demo purposes. Real runbooks would include internal tooling
 links, credentials references, and escalation paths — exactly the kind of content
-that must never end up on a publicly indexed page.
+that must never end up on the public site.
 :::

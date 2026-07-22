@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+visibility: public
 ---
 
 # AlphaX Cloud Overview

@@ -1,102 +1,65 @@
-# Demo Walkthrough — GitHub + Docusaurus + CMS (Option D)
+# Demo Walkthrough — Tagged Content, Two Sites, One Source
 
-This is the companion guide for showing this demo in the manager meeting. It covers
-what was actually built, how quick it was to set up, and — most importantly — what
-this approach does **not** solve out of the box.
+Companion guide for showing this in the manager meeting.
 
-> **How to demo it live:** run `npm install` then `npm run demo`, open
-> `http://localhost:3000/minnovation-docs-demo/`, then open `/admin/` to show the
-> CMS editing a page live. That live interaction is a stronger demo than screenshots,
-> so this guide is deliberately screenshot-free — walk through the running site instead.
+> **How to demo it live:** deploy the two Netlify sites (see
+> `SETUP_PERSONAL_ACCOUNT.md`), open both URLs side by side, and walk the
+> sidebar/search/CMS differences live. That's a stronger demo than
+> screenshots, so this guide stays screenshot-free on purpose.
 
 ---
 
 ## 1. What was built
 
-A real, working Docusaurus site with:
-
 | Piece | What it shows |
 |---|---|
-| `/docs/` | Public docs — a stand-in for the AlphaX manual, Conduit API reference, and XVision install guide currently in GitBook/HubSpot |
-| `/internal-docs/` | Internal-only docs — architecture notes and a deployment runbook, in a **separate** content instance with its own sidebar and URL path |
-| `/admin/` | Decap CMS — a free, open-source, git-based CMS so non-developers can edit pages through a form instead of writing Markdown or using git directly |
+| `content/docs/` | One tracked source. Every page tagged `visibility: public` or `visibility: internal` |
+| `scripts/prepare-build.mjs` | Build-time filter — reads `SITE_AUDIENCE`, copies only the allowed pages into the folder Docusaurus builds from |
+| Public Netlify site | `SITE_AUDIENCE=public` — only public-tagged pages, open to anyone |
+| Internal Netlify site | `SITE_AUDIENCE=internal` — every page, whole site behind Basic Auth |
+| `/admin/` (Decap CMS) | Form-based editing, including a Visibility dropdown right on each page |
+| Search | Indexed per build — public search literally cannot return an internal-only page, because that page was never part of the public build |
 
-All content lives as Markdown files in a git repo. There's no database and no
-backend server to run — the whole site is static files.
+## 2. Why "one source, two filtered builds" instead of two folders
 
-## 2. How quick this was to set up
+The earlier version of this demo used two separate content folders
+(`docs/` and `internal-docs/`) as two Docusaurus content instances on one
+site. That worked, but it meant maintaining structure in two places and never
+actually gated anything by itself.
 
-| Step | Time |
-|---|---|
-| Scaffold a new Docusaurus site (`create-docusaurus`) | ~2 min |
-| Add a second "internal" content instance | ~10 min |
-| Write placeholder public + internal content | ~15 min |
-| Wire up Decap CMS (admin UI + config) | ~15 min |
-| Confirm the production build works | ~2 min |
+This version tags content once, at the page level, and lets the *build*
+decide what ships where. Practically:
 
-Roughly **45 minutes** end-to-end for someone already comfortable with
-Docusaurus, most of it spent on content and config rather than plumbing. That's the
-main pitch for Option D: it's fast to stand up and the whole result is disposable —
-if it doesn't work out, it's just files in a repo, nothing to unwind.
+- Adding a new public page never requires touching anything internal-specific
+- Marking a page internal is a one-field change in the CMS, not a file move
+- The public and internal sidebars can never drift out of sync in structure —
+  the public one is mechanically a subset of the internal one
 
-## 3. The important caveat: this does not gate access on its own
+## 3. The access-control story, honestly
 
-This is the same principle that came up testing GitBook and Confluence: **access
-control is a site/hosting-level decision, not a per-page checkbox.** Docusaurus and
-GitHub Pages don't change that — if anything, they start from a more basic place,
-because a plain GitHub Pages site has **no built-in access control at all.**
+Because the internal site is now its **own separate Netlify deployment**
+rather than a shared path on one site, gating it is simpler than the earlier
+Cloudflare/path-scoping approach: whole-site Basic Auth, free, one generated
+`_headers` file.
 
-In this demo, `/internal-docs/` is visually separate but sits on the same public
-site as `/docs/`. Anyone with the URL can see both. The demo banner at the top of
-the site says this explicitly so it's never mistaken for "done."
+The caveat carried over from before: this is Basic Auth, not SSO. **Real SAML
+SSO on Netlify requires an Enterprise plan** with Organization/Team SSO
+already configured — not available on a free or personal account. If this
+becomes a real company deployment on Netlify Enterprise, the swap is
+straightforward: same two-site structure, just replace the generated
+`_headers` step with Project configuration → Visitor access → Password
+Protection → SSO on the internal site only.
 
-### Making it actually private — the real options
+## 4. Suggested talking points for the meeting
 
-| Approach | How it works | Cost |
-|---|---|---|
-| **Two repos** | Public repo → GitHub Pages (free, public). Internal repo → kept private, deployed via a host that supports password/SSO protection (e.g. Cloudflare Access in front of a custom domain, or a hosting provider's built-in deployment protection). | Free hosting for the public side; the private side usually needs a paid protection feature. |
-| **GitHub Enterprise private Pages** | If Minnovation is on GitHub Enterprise Cloud, a private repo's Pages site can be restricted to org members only, no extra infrastructure needed. | Depends on existing GitHub plan — worth checking before ruling this in or out. |
-| **Skip the website for internal docs** | Keep internal notes as a private repo's README/wiki instead of a deployed site. Plainer UI, but genuinely private with zero extra setup. Mirrors the earlier GitHub finding that wikis need a paid plan on private repos, so README-based docs are the free fallback. | Free. |
-
-None of these are configured in this demo — they're infrastructure decisions that
-depend on Minnovation's existing GitHub plan and hosting budget, which is worth a
-quick confirmation before committing to this option.
-
-## 4. The CMS layer (Decap CMS)
-
-Decap CMS is a separate concern from hosting/access control — it's just the editing
-experience. It renders a form UI (defined in `static/admin/config.yml`) and commits
-the resulting Markdown straight to git.
-
-- **In this demo:** it runs against a local proxy (`npm run cms`), so edits write to
-  files on disk with no external accounts needed — good for a live demo, not for
-  production.
-- **In a real deployment:** it needs either a small GitHub OAuth app (free, ~5 minutes
-  to set up) or a Netlify account using Netlify Identity + Git Gateway (also free at
-  this scale). Either lets writers log in and edit without touching git.
-
-## 5. How this compares to the other three options
-
-Full detail is in the main report; the short version for the room:
-
-- **Option A (GitBook)** — least migration effort, but Visitor Authentication (the
-  feature that would gate internal content) is a paid-tier feature.
-- **Option B (Confluence/SharePoint/Google Sites)** — strong access control if
-  Minnovation already pays for one of these; access is blocked at the site level
-  before space permissions even apply.
-- **Option C (Notion)** — flexible and stack-agnostic, page-level sharing controls
-  are more granular than GitBook's.
-- **Option D (this demo)** — fastest and cheapest to stand up, developer-friendly,
-  but access control is entirely bring-your-own — nothing is gated by default.
-
-## 6. Suggested talking points for the meeting
-
-1. Show the live site running locally — public docs, internal docs, and the CMS
-   editing a page in real time.
-2. Point out the demo banner and explain the access-control caveat up front, before
-   anyone assumes `/internal-docs/` is actually private.
-3. Ask whether Minnovation's existing GitHub plan supports private Pages — that
-   single fact changes which of the three "making it private" options is cheapest.
-4. Frame Option D as the right fit **if** engineering wants to own docs like code
-   (PRs, review, versioning) — and a weaker fit if the goal is handing editing over
-   to non-technical staff without any GitHub/OAuth setup at all.
+1. Show the public site's sidebar, then the internal site's — same
+   categories, same order, internal has two extra entries. One source, not
+   two things to keep in sync.
+2. Open the CMS, open a page, point at the Visibility dropdown. That's the
+   entire mechanism for deciding where a page ships.
+3. Search for an internal-only term on both sites — works on internal, empty
+   on public. Not filtered after the fact; never indexed on the public build.
+4. Create a new page live, tag it, push, and show it appear (or not) on each
+   site after the rebuild.
+5. Be upfront about the Basic-Auth-vs-SSO distinction, and what changes if
+   this moves to a paid company account later.
