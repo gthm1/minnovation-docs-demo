@@ -15,7 +15,10 @@ const config = {
 
   // Placeholder — replace with the real GitHub Pages URL once a repo exists.
   url: 'https://minnovation-technologies.github.io',
-  baseUrl: '/minnovation-docs-demo/',
+  // GitHub Pages serves this under a subpath; Cloudflare Workers serves it at
+  // the root of its own subdomain. Set DOCS_BASE_URL=/ in Cloudflare's build
+  // environment variables to override this default for that deployment.
+  baseUrl: process.env.DOCS_BASE_URL || '/minnovation-docs-demo/',
 
   // GitHub pages deployment config — replace with the real org/repo.
   organizationName: 'minnovation-technologies',

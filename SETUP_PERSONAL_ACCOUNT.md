@@ -98,9 +98,23 @@ same: a second copy of the site, then a real login wall in front of just
    
    This repo already includes a `wrangler.jsonc` telling that deploy command to
    serve the `build/` folder as static assets, so you shouldn't need to configure
-   anything else.
-6. Click **Save and Deploy**. First deploy takes a couple of minutes.
-7. Note the resulting URL — something like
+   anything else there.
+6. **Important:** before or right after the first deploy, go to your Worker's
+   **Settings → Variables and Secrets** and add a build variable:
+   - **Name:** `DOCS_BASE_URL`
+   - **Value:** `/`
+   
+   GitHub Pages serves this site under a subpath
+   (`your-username.github.io/minnovation-docs-demo/`), so `docusaurus.config.js`
+   defaults `baseUrl` to `/minnovation-docs-demo/`. Cloudflare Workers serves it
+   at the root of its own subdomain instead, so it needs `baseUrl` to be `/` —
+   this variable overrides the default just for this deployment. Without it,
+   you'll see a "Your Docusaurus site did not load properly" error page.
+7. Trigger a new deploy after adding the variable (Deployments → Retry deploy, or
+   just push a new commit) so it picks up the change.
+8. Click **Save and Deploy** if you haven't already. First deploy takes a couple
+   of minutes.
+9. Note the resulting URL — something like
    `https://minnovation-docs-demo.<your-subdomain>.workers.dev`.
 
 This alone is just a second copy of the same public site. The next step is what
