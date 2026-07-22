@@ -26,15 +26,30 @@ Create the repo first at **github.com/new** — name it `minnovation-docs-demo`,
 note that means the published site itself is public web either way), and don't
 initialize it with a README (this project already has one).
 
-Then update the placeholder org/repo name in the config to match your account:
+Then update the placeholder org/repo name in the config to match your account.
 
-```bash
-sed -i '' \
-  -e "s/minnovation-technologies/<YOUR_GITHUB_USERNAME>/g" \
-  docusaurus.config.js
+**On Windows (PowerShell):**
+
+```powershell
+(Get-Content docusaurus.config.js) -replace 'minnovation-technologies', '<YOUR_GITHUB_USERNAME>' | Set-Content docusaurus.config.js
 ```
 
-(Drop the `''` after `-i` if you're on Linux rather than macOS.)
+**On macOS:**
+
+```bash
+sed -i '' -e "s/minnovation-technologies/<YOUR_GITHUB_USERNAME>/g" docusaurus.config.js
+```
+
+**On Linux:**
+
+```bash
+sed -i -e "s/minnovation-technologies/<YOUR_GITHUB_USERNAME>/g" docusaurus.config.js
+```
+
+Or simplest on any OS: open `docusaurus.config.js` in an editor and use
+find-and-replace to swap every occurrence of `minnovation-technologies` (there
+are six — in the `url`, `organizationName`, two `editUrl` fields, and two GitHub
+navbar/footer links) with your GitHub username.
 
 Commit and push:
 
