@@ -3,7 +3,7 @@
 This walks through getting all four demo pieces live under your own accounts:
 
 1. **Public site** — GitHub Pages (free)
-2. **Private site** — the same content, but with a real login wall on `/internal-docs/`, via Cloudflare Pages + Cloudflare Access (free)
+2. **Private site** — the same content, but with a real login wall on `/internal-docs/`, via Cloudflare Workers + Cloudflare Access (free)
 3. **Hierarchy** — visible in both, since it's the same nav/sidebar structure
 4. **Adding content through the CMS** — Decap CMS, running locally against your repo
 5. *(Optional)* **Netlify** as a second hosting platform, with a free path-scoped login gate on `/internal-docs/` — see step 3c for why real SSO specifically needs an Enterprise plan there
@@ -76,22 +76,32 @@ This is the "public site" — anyone with the link can see both `/docs/` and
 `/internal-docs/`, which is exactly the caveat from the walkthrough guide: GitHub
 Pages has no built-in access control, so nothing here is actually gated yet.
 
-## 3. Turn on the private site (Cloudflare Pages + Access)
+## 3. Turn on the private site (Cloudflare Workers + Access)
 
-This deploys the same repo a second time, then puts a real login wall in front of
-just the `/internal-docs/*` path — a genuine demo of "private," not just a visually
-separate section.
+Cloudflare has folded Pages into its unified Workers product, so the dashboard
+flow looks a little different than older guides describe — you'll deploy this as
+a Worker with static assets rather than a "Pages project," but the result is the
+same: a second copy of the site, then a real login wall in front of just
+`/internal-docs/*`.
 
-### 3a. Deploy to Cloudflare Pages
+### 3a. Deploy to Cloudflare Workers
 
 1. Sign up free at **dash.cloudflare.com**.
-2. Go to **Workers & Pages → Create → Pages → Connect to Git**.
-3. Authorize Cloudflare's GitHub App and select the `minnovation-docs-demo` repo.
-4. Build settings:
-   - Framework preset: **Docusaurus** (or manually: build command `npm run build`,
-     output directory `build`)
-5. Click **Save and Deploy**. First deploy takes a couple of minutes.
-6. Note the resulting URL — something like `https://minnovation-docs-demo.pages.dev`.
+2. In the left sidebar, go to **Compute (Workers) → Workers & Pages**, then click
+   **Create application** top right.
+3. On the "Create a Worker" screen, click **Connect GitHub**.
+4. Authorize Cloudflare's GitHub App and select the `minnovation-docs-demo` repo.
+5. Cloudflare should auto-detect Docusaurus and pre-fill sensible settings. If it
+   asks you to confirm or fill them in manually:
+   - **Build command:** `npm run build`
+   - **Deploy command:** leave the default, `npx wrangler deploy`
+   
+   This repo already includes a `wrangler.jsonc` telling that deploy command to
+   serve the `build/` folder as static assets, so you shouldn't need to configure
+   anything else.
+6. Click **Save and Deploy**. First deploy takes a couple of minutes.
+7. Note the resulting URL — something like
+   `https://minnovation-docs-demo.<your-subdomain>.workers.dev`.
 
 This alone is just a second copy of the same public site. The next step is what
 makes it "private."
@@ -103,7 +113,7 @@ makes it "private."
    needed) and choose a team name.
 2. Go to **Access → Applications → Add an application → Self-hosted**.
 3. Configure:
-   - **Application domain:** your `.pages.dev` domain from step 3a
+   - **Application domain:** your `.workers.dev` domain from step 3a
    - **Path:** `internal-docs/*`
    - (Leave the root path unset — Access only intercepts requests matching this
      specific path, so `/docs/` and the homepage stay open)
@@ -112,10 +122,11 @@ makes it "private."
 5. Save. That's it.
 
 Now:
-- `https://<your-project>.pages.dev/docs/` — opens with no login, same as GitHub Pages
-- `https://<your-project>.pages.dev/internal-docs/` — shows a Cloudflare login
-  screen first (one-time PIN emailed to you); only after logging in as an allowed
-  user do you see the content
+- `https://<your-project>.<subdomain>.workers.dev/docs/` — opens with no login,
+  same as GitHub Pages
+- `https://<your-project>.<subdomain>.workers.dev/internal-docs/` — shows a
+  Cloudflare login screen first (one-time PIN emailed to you); only after logging
+  in as an allowed user do you see the content
 
 That's the live "public vs. private" contrast for the demo — same repo, same
 build, two different hosting setups, one of them actually gated by path.
@@ -173,7 +184,7 @@ Protection → set protection type to require SSO (after your org's SAML SSO is
 configured under team settings). Because that protects the whole site rather than
 just a path, the clean way to keep `/docs/` open in that setup is to deploy the
 repo as **two separate Netlify sites** — one left public, one with SSO protection
-turned on — the same pattern used for GitHub Pages + Cloudflare Pages above.
+turned on — the same pattern used for GitHub Pages + Cloudflare Workers above.
 
 ## 4. Demo the hierarchy
 
@@ -207,7 +218,7 @@ This starts Docusaurus (`localhost:3000`) and the Decap CMS local proxy
    git commit -m "Edit via CMS"
    git push
    ```
-   Both GitHub Pages and Cloudflare Pages will pick up the push automatically and
+   Both GitHub Pages and Cloudflare Workers will pick up the push automatically and
    redeploy within a minute or two — refresh either live URL afterward to show the
    change went live.
 
@@ -230,7 +241,7 @@ concept — the local version already shows the full editing experience.
 
 1. Open the GitHub Pages URL — show `/docs/` and `/internal-docs/`, point out both
    are visible with no login (the "everything is public by default" caveat).
-2. Open the Cloudflare Pages URL — show `/docs/` opens fine, then click into
+2. Open the Cloudflare Workers URL — show `/docs/` opens fine, then click into
    `/internal-docs/` and hit the login wall. Log in with your email to show it
    through once authenticated.
 3. (If you set it up) Open the Netlify URL and click into `/internal-docs/` to
