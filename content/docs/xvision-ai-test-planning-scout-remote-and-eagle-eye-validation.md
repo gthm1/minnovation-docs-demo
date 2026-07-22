@@ -1,7 +1,7 @@
 ---
 title: "XVISION AI - Test planning: Scout remote and Eagle Eye validation"
 visibility: public
-sidebar_position: ""
+sidebar_position: 1
 ---
 Scout local pedestrian detection is complete. This plan covers the three phases that remain: Scout in remote processing
 
